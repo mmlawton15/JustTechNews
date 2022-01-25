@@ -3,6 +3,6 @@ const router = require('express').Router();
 
 const userRoutes = require('./user-routes.js');
 
-router.use('/api/users', userRoutes);
+router.use('/api/users', userRoutes); //FIXED THIS! YEAH
 
 module.exports = router;
