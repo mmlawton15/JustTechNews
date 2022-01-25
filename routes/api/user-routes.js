@@ -50,11 +50,33 @@ router.post('/', (req, res) => {
       });
   });
 
+router.post('/login', (req, res) => { //post is used instead of get because get carries the request parameter appended in the url string, post carries this req parameter in req.body which is a more secure way of transferring data from client to server
+  // expects {email: 'lernantino@gmail.com', password: 'password1234'}
+  User.findOne({ //query user table
+    where: {
+      email: req.body.email //assigned email entered by user to this value
+    }
+  }).then(dbUserData => {
+    if (!dbUserData) { //if user isn't found, send response to client
+      res.status(400).json({ message: 'No user with that email address!' });
+      return;
+    }
+    // Verify user
+    const validPassword = dbUserData.checkPassword(req.body.password);
+    if (!validPassword) {
+      res.status(400).json({ message: 'Incorrect password!' });
+      return;
+    }
+    res.json({ user: dbUserData, message: 'You are now logged in!' });
+  });  
+});
+
 // PUT /api/users/1. equivalent to update users, set username = x, where id=1
 router.put('/:id', (req, res) => {
     // expects {username: 'Lernantino', email: 'lernantino@gmail.com', password: 'password1234'}
     // if req.body has exact key/value pairs to match the model, you can just use `req.body` instead
     User.update(req.body, {
+      individualHooks: true,
       where: {
         id: req.params.id
       }
