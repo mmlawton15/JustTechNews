@@ -4,7 +4,9 @@ const { User } = require('../../models');
 // GET /api/users. equivalent to SELECT * FROM users; in mysql
 router.get('/', (req, res) => {
     // Access our User model and run .findAll() method)
-    User.findAll()
+    User.findAll({
+      attributes: { exclude: ['password'] } //instructed the query to exclude pw column
+    })
       .then(dbUserData => res.json(dbUserData))
       .catch(err => {
         console.log(err);
@@ -14,22 +16,23 @@ router.get('/', (req, res) => {
 
 // GET /api/users/1. equivalent to SELECT * FROM users WHERE id = 1;
 router.get('/:id', (req, res) => {
-    User.findOne({
-      where: {
-        id: req.params.id //how to return one user based on this id value
+  User.findOne({
+    attributes: { exclude: ['password'] },
+    where: {
+      id: req.params.id
+    }
+  })
+    .then(dbUserData => {
+      if (!dbUserData) {
+        res.status(404).json({ message: 'No user found with this id' });
+        return;
       }
+      res.json(dbUserData);
     })
-      .then(dbUserData => {
-        if (!dbUserData) {
-          res.status(404).json({ message: 'No user found with this id' });
-          return;
-        }
-        res.json(dbUserData);
-      })
-      .catch(err => {
-        console.log(err);
-        res.status(500).json(err);
-      });
+    .catch(err => {
+      console.log(err);
+      res.status(500).json(err);
+    });
   });
 
 // POST /api/users. equivalent to INSERT INTO users function (13.1.6)
