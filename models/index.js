@@ -3,5 +3,6 @@
 
 //import user file
 const User = require('./User');
+const Post = require("./Post");
 //export an object with user file as a property
-module.exports = { User };
+module.exports = { User, Post };
