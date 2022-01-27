@@ -1,7 +1,7 @@
 const router = require('express').Router();
-const { User } = require('../../models');
+const { User, Post, Vote } = require('../../models');
 
-// GET /api/users. equivalent to SELECT * FROM users; in mysql
+// get all users
 router.get('/', (req, res) => {
   User.findAll({
     attributes: { exclude: ['password'] }
@@ -13,7 +13,6 @@ router.get('/', (req, res) => {
     });
 });
 
-// GET /api/users/1. equivalent to SELECT * FROM users WHERE id = 1;
 router.get('/:id', (req, res) => {
   User.findOne({
     attributes: { exclude: ['password'] },
@@ -24,6 +23,12 @@ router.get('/:id', (req, res) => {
       {
         model: Post,
         attributes: ['id', 'title', 'post_url', 'created_at']
+      },
+      {
+        model: Post,
+        attributes: ['title'],
+        through: Vote,
+        as: 'voted_posts'
       }
     ]
   })
@@ -40,7 +45,6 @@ router.get('/:id', (req, res) => {
     });
 });
 
-// POST /api/users. equivalent to INSERT INTO users function (13.1.6)
 router.post('/', (req, res) => {
   // expects {username: 'Lernantino', email: 'lernantino@gmail.com', password: 'password1234'}
   User.create({
@@ -55,8 +59,7 @@ router.post('/', (req, res) => {
     });
 });
 
-
-router.post('/login', (req, res) => { //post is used instead of get because get carries the request parameter appended in the url string, post carries this req parameter in req.body which is a more secure way of transferring data from client to server
+router.post('/login', (req, res) => {
   // expects {email: 'lernantino@gmail.com', password: 'password1234'}
   User.findOne({
     where: {
@@ -67,39 +70,41 @@ router.post('/login', (req, res) => { //post is used instead of get because get 
       res.status(400).json({ message: 'No user with that email address!' });
       return;
     }
+
     const validPassword = dbUserData.checkPassword(req.body.password);
+
     if (!validPassword) {
       res.status(400).json({ message: 'Incorrect password!' });
       return;
     }
+
     res.json({ user: dbUserData, message: 'You are now logged in!' });
   });
 });
 
-// PUT /api/users/1. equivalent to update users, set username = x, where id=1
 router.put('/:id', (req, res) => {
-    // expects {username: 'Lernantino', email: 'lernantino@gmail.com', password: 'password1234'}
-    // if req.body has exact key/value pairs to match the model, you can just use `req.body` instead
-    User.update(req.body, {
-      individualHooks: true,
-      where: {
-        id: req.params.id
-      }
-    })
-      .then(dbUserData => {
-        if (!dbUserData[0]) {
-          res.status(404).json({ message: 'No user found with this id' });
-          return;
-        }
-        res.json(dbUserData);
-      })
-      .catch(err => {
-        console.log(err);
-        res.status(500).json(err);
-      });
-  });
+  // expects {username: 'Lernantino', email: 'lernantino@gmail.com', password: 'password1234'}
 
-// DELETE /api/users/1
+  // pass in req.body instead to only update what's passed through
+  User.update(req.body, {
+    individualHooks: true,
+    where: {
+      id: req.params.id
+    }
+  })
+    .then(dbUserData => {
+      if (!dbUserData[0]) {
+        res.status(404).json({ message: 'No user found with this id' });
+        return;
+      }
+      res.json(dbUserData);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json(err);
+    });
+});
+
 router.delete('/:id', (req, res) => {
   User.destroy({
     where: {
