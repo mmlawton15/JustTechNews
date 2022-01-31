@@ -4,8 +4,9 @@
   "description": "Lesson 13 of our bootcamp, a news site with a coding theme. Our first exposure to ORM",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "test": "jest",
+    "start": "node server.js",
+    "seeds": "node seeds/index.js"
   },
   "repository": {
     "type": "git",
