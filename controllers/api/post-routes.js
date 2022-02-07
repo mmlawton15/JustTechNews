@@ -1,11 +1,11 @@
 const router = require('express').Router();
-// const sequelize = require('../../config/connection');
-// const { Post, User, Comment, Vote } = require('../../models');
 const sequelize = require('../../config/connection');
 const { Post, User, Comment } = require('../../models');
+const withAuth = require('utils/auth.js');
 
-// get all users, homepage route
+// get all users
 router.get('/', (req, res) => {
+  console.log('======================');
   Post.findAll({
     attributes: [
       'id',
@@ -29,19 +29,12 @@ router.get('/', (req, res) => {
       }
     ]
   })
-    .then(dbPostData => {
-      // pass a single post object into the homepage template
-      console.log(dbPostData[0]);
-      const posts = dbPostData.map(post => post.get({ plain: true }));
-      res.render('homepage', { posts });
-    })
+    .then(dbPostData => res.json(dbPostData))
     .catch(err => {
       console.log(err);
       res.status(500).json(err);
     });
 });
-
-
 
 router.get('/:id', (req, res) => {
   Post.findOne({
@@ -83,12 +76,12 @@ router.get('/:id', (req, res) => {
     });
 });
 
-router.post('/', (req, res) => {
+router.post('/', withAuth, (req, res) => {
   // expects {title: 'Taskmaster goes public!', post_url: 'https://taskmaster.com/press', user_id: 1}
   Post.create({
     title: req.body.title,
     post_url: req.body.post_url,
-    user_id: req.body.user_id
+    user_id: req.session.user_id
   })
     .then(dbPostData => res.json(dbPostData))
     .catch(err => {
@@ -97,9 +90,9 @@ router.post('/', (req, res) => {
     });
 });
 
-router.put('/upvote', (req, res) => {
+router.put('/upvote', withAuth, (req, res) => {
   // custom static method created in models/Post.js
-  Post.upvote(req.body, { Vote, Comment, User })
+  Post.upvote({ ...req.body, user_id: req.session.user_id }, { Vote, Comment, User })
     .then(updatedVoteData => res.json(updatedVoteData))
     .catch(err => {
       console.log(err);
@@ -107,7 +100,7 @@ router.put('/upvote', (req, res) => {
     });
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', withAuth, (req, res) => {
   Post.update(
     {
       title: req.body.title
@@ -131,7 +124,8 @@ router.put('/:id', (req, res) => {
     });
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', withAuth, (req, res) => {
+  console.log('id', req.params.id);
   Post.destroy({
     where: {
       id: req.params.id
